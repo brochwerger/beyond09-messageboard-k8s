@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: List
+metadata: {}
+items:
+
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app: messageboard
+    name: messageboard
+  spec:
+    replicas: 3
+    selector:
+      matchLabels:
+        deployment: messageboard
+    template:
+      metadata:
+        labels:
+          app: messageboard
+          deployment: messageboard
+      spec:
+        containers:
+        - image: quay.io/brochwer/messageboard
+          name: messageboard
+          ports:
+          - containerPort: 8000
+            protocol: TCP
+          env:
+          - name: "POSTGRESQL_USER"
+            valueFrom:
+              secretKeyRef:
+                name: "db-credentials"
+                key: "username" 
+          - name: "POSTGRESQL_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: "db-credentials"
+                key: "password" 
+          - name: "POSTGRESQL_DATABASE"
+            valueFrom:
+              secretKeyRef:
+                name: "db-credentials"
+                key: "database" 
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: messageboard
+    name: messageboard
+  spec:
+    # type: NodePort
+    type: LoadBalancer
+    ports:
+    - name: 8000-tcp
+      port: 8000
+      protocol: TCP
+      targetPort: 8000
+    selector:
+      deployment: messageboard
